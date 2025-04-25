@@ -1194,6 +1194,8 @@
                             closed.collapse('show');
                         } else { // otherwise just toggle in class on the two views
                             expanded.__removeClass('in');
+                            expanded.__addClass('collapse');
+                            closed.__removeClass('collapse');
                             closed.__addClass('in');
                         }
                         if ($this.is('span')) {
