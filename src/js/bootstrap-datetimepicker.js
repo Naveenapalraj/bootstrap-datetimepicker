@@ -1283,6 +1283,9 @@
              * Shows the widget. Possibly will emit dp.show and dp.change
              */
             show = function () {
+                if (options.isTimeTypeNone && options.timeFormat) {
+                    options.format = `${options.format}${(options.timeFormat)}`
+                }
                 var currentMoment,
                     useCurrentGranularity = {
                         'year': function (m) {
@@ -2631,6 +2634,8 @@
         inline: false,
         keepInvalid: false,
         datepickerInput: '.datepickerinput',
+        isTimeTypeNone: false,
+        timeFormat: null,
         keyBinds: {
             up: function (widget) {
                 if (!widget) {
