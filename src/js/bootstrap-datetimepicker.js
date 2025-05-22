@@ -2444,6 +2444,34 @@
 			return picker;
 		};
 
+        picker.isTimeTypeNone = function (isTimeTypeNone) {
+            if (arguments.length === 0) {
+                return options.isTimeTypeNone;
+            }
+
+            if (typeof isTimeTypeNone !== 'boolean') {
+                throw new TypeError('keepInvalid() expects a boolean parameter');
+            }
+
+            options.isTimeTypeNone = isTimeTypeNone;
+
+            return picker;
+        };
+
+        picker.timeFormat = function (timeFormat) {
+            if (arguments.length === 0) {
+                return options.timeFormat;
+            }
+
+            if (typeof timeFormat !== 'string') {
+                throw new TypeError('datepickerInput() expects a string parameter');
+            }
+
+            options.timeFormat = timeFormat;
+
+            return picker;
+        };
+
         // initializing element and component attributes
         if (element.is('input')) {
             input = element;
