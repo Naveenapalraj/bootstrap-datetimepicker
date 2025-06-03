@@ -264,7 +264,7 @@
             },
 
             hasTime = function () {
-                return (isEnabled('h') || isEnabled('m') || isEnabled('s'));
+                return options.showTimePicker;
             },
 
             hasDate = function () {
@@ -316,7 +316,7 @@
                     middleRow = $('<tr>'),
                     bottomRow = $('<tr>');
 
-                if (isEnabled('h')) {
+                if (isEnabled('h') || options.showTimePicker) {
                     topRow.append($('<td>')
                         .append($('<a>').attr({ href: '#', tabindex: '-1', 'title': options.tooltips.incrementHour }).__addClass('btn').attr('data-action', 'incrementHours').append($('<span>').__addClass(options.icons.up))));
                     middleRow.append($('<td>')
@@ -324,7 +324,7 @@
                     bottomRow.append($('<td>')
                         .append($('<a>').attr({ href: '#', tabindex: '-1', 'title': options.tooltips.decrementHour }).__addClass('btn').attr('data-action', 'decrementHours').append($('<span>').__addClass(options.icons.down))));
                 }
-                if (isEnabled('m')) {
+                if (isEnabled('m') || options.showTimePicker) {
                     if (isEnabled('h')) {
                         topRow.append($('<td>').__addClass('separator'));
                         middleRow.append($('<td>').__addClass('separator').html(':'));
@@ -951,13 +951,17 @@
                 }
 
                 if (options.stepping !== 1) {
-                    targetMoment.minutes((Math.round(targetMoment.minutes() / options.stepping) * options.stepping)).seconds(0);
+					targetMoment = targetMoment.minutes((Math.round(targetMoment.minutes() / options.stepping) * options.stepping)).seconds(0).milliseconds(0);
 
-                    while (options.minDate && targetMoment.isBefore(options.minDate)) {
-                        targetMoment.add(options.stepping, 'minutes');
-                    }
-                }
+					while (options.minDate && targetMoment.isBefore(options.minDate)) {
+						targetMoment.add(options.stepping, 'minutes');
+					}
 
+					if (options.maxDate && targetMoment.isAfter(options.maxDate)) {
+						targetMoment = options.maxDate.clone().seconds(0).milliseconds(0);
+					}
+				}
+                
                 if (isValid(targetMoment)) {
                     date = targetMoment;
                     viewDate = date.clone();
@@ -970,6 +974,9 @@
                         date: date.clone(),
                         oldDate: oldDate
                     });
+                    if (widget && widget.find('.timepicker').is(':visible')) {
+                        actions.validateTimePickerArrows(widget);
+                    }
                 } else {
                     if (!options.keepInvalid) {
                         input.val(unset ? '' : date.format(actualFormat));
@@ -1184,6 +1191,11 @@
                         closed = $parent.__find('.collapse:not(.in)'),
                         collapseData;
 
+                    if (options.timeFormat && !options.format.includes(options.timeFormat)) {
+                        const updatedFormat = `${options.format} ${options.timeFormat}`;
+                        picker.format(updatedFormat);
+                    }
+
                     if (expanded && expanded.length) {
                         collapseData = expanded.data('collapse');
                         if (collapseData && collapseData.transitioning) {
@@ -1204,11 +1216,43 @@
                             $this.__find('span').__toggleClass(options.icons.time + ' ' + options.icons.date);
                         }
 
+                        if (widget && widget.find('.timepicker').is(':visible')) {
+                            actions.validateTimePickerArrows();
+						}
+
                         // NOTE: uncomment if toggled state will be restored in show()
                         //if (component) {
                         //    component.__find('span').__toggleClass(options.icons.time + ' ' + options.icons.date);
                         //}
                     }
+                },
+
+                validateTimePickerArrows: function () {
+                    if (!widget || !widget.find('.timepicker').is(':visible')) return;
+                
+                    const hourUp = widget.find('[data-action="incrementHours"]'),
+                        hourDown = widget.find('[data-action="decrementHours"]'),
+                        minuteUp = widget.find('[data-action="incrementMinutes"]'),
+                        minuteDown = widget.find('[data-action="decrementMinutes"]'),
+                        inputVal = input.val().trim(),
+                        selectedMoment = inputVal.length !== 0 ? parseInputDate(inputVal) : null;
+
+                    if (!selectedMoment) return;
+                
+                    const plusHour = selectedMoment.clone().add(1, 'hour'),
+                        minusHour = selectedMoment.clone().subtract(1, 'hour'),
+                        plusMinute = selectedMoment.clone().add(5, 'minute'),
+                        minusMinute = selectedMoment.clone().subtract(5, 'minute');
+                
+                    hourUp.removeClass('inactive-css');
+                    hourDown.removeClass('inactive-css');
+                    minuteUp.removeClass('inactive-css');
+                    minuteDown.removeClass('inactive-css');
+                
+                    if (!isValid(minusHour, 'h')) hourDown.addClass('inactive-css');
+                    if (!isValid(plusHour, 'h')) hourUp.addClass('inactive-css');
+                    if (!isValid(minusMinute, 'm')) minuteDown.addClass('inactive-css');
+                    if (!isValid(plusMinute, 'm')) minuteUp.addClass('inactive-css');
                 },
 
                 showPicker: function () {
@@ -1283,9 +1327,6 @@
              * Shows the widget. Possibly will emit dp.show and dp.change
              */
             show = function () {
-                if (options.isTimeTypeNone && options.timeFormat) {
-                    options.format = `${options.format}${(options.timeFormat)}`
-                }
                 var currentMoment,
                     useCurrentGranularity = {
                         'year': function (m) {
@@ -1496,7 +1537,8 @@
                     parseFormats.push(actualFormat);
                 }
 
-                use24Hours = (actualFormat.toLowerCase().indexOf('a') < 1 && actualFormat.replace(/\[.*?\]/g, '').indexOf('h') < 1);
+                use24Hours = (actualFormat.match(/\b(hh:mm A|HH:mm)\b/) == null && options.timeFormat) ? (options.timeFormat.toLowerCase().indexOf('a') < 1) :
+					(actualFormat.toLowerCase().indexOf('a') < 1 && actualFormat.replace(/\[.*?\]/g, '').indexOf('h') < 1);
 
                 if (isEnabled('y')) {
                     minViewModeNumber = 2;
@@ -2444,16 +2486,16 @@
 			return picker;
 		};
 
-        picker.isTimeTypeNone = function (isTimeTypeNone) {
+        picker.showTimePicker = function (showTimePicker) {
             if (arguments.length === 0) {
-                return options.isTimeTypeNone;
+                return options.showTimePicker;
             }
 
-            if (typeof isTimeTypeNone !== 'boolean') {
+            if (typeof showTimePicker !== 'boolean') {
                 throw new TypeError('keepInvalid() expects a boolean parameter');
             }
 
-            options.isTimeTypeNone = isTimeTypeNone;
+            options.showTimePicker = showTimePicker;
 
             return picker;
         };
@@ -2662,8 +2704,8 @@
         inline: false,
         keepInvalid: false,
         datepickerInput: '.datepickerinput',
-        isTimeTypeNone: false,
-        timeFormat: null,
+        showTimePicker: false,
+        timeFormat: "",
         keyBinds: {
             up: function (widget) {
                 if (!widget) {
