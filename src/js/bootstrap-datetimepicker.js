@@ -604,11 +604,11 @@
             },
 
             isInDisabledHours = function (testDate) {
-                return options.disabledHours[testDate.format('H')] === true;
+                return options.disabledHours[testDate.format('H', { hideUserTimeFormat: true })] === true;
             },
 
             isInEnabledHours = function (testDate) {
-                return options.enabledHours[testDate.format('H')] === true;
+                return options.enabledHours[testDate.format('H', { hideUserTimeFormat: true })] === true;
             },
 
             isValid = function (targetMoment, granularity) {
@@ -853,7 +853,7 @@
                         row = $('<tr>');
                         html.push(row);
                     }
-                    row.append('<td data-action="selectHour" class="hour' + (!isValid(currentHour, 'h') ? ' disabled' : '') + '">' + currentHour.format(use24Hours ? 'HH' : 'hh') + '</td>');
+                    row.append('<td data-action="selectHour" class="hour' + (!isValid(currentHour, 'h') ? ' disabled' : '') + '">' + currentHour.format(use24Hours ? 'HH' : 'hh', { hideUserTimeFormat: true }) + '</td>');
                     currentHour.add(1, 'h');
                 }
                 table.empty().append(html);
@@ -871,7 +871,7 @@
                         row = $('<tr>');
                         html.push(row);
                     }
-                    row.append('<td data-action="selectMinute" class="minute' + (!isValid(currentMinute, 'm') ? ' disabled' : '') + '">' + currentMinute.format('mm') + '</td>');
+                    row.append('<td data-action="selectMinute" class="minute' + (!isValid(currentMinute, 'm') ? ' disabled' : '') + '">' + currentMinute.format('mm', { hideUserTimeFormat: true }) + '</td>');
                     currentMinute.add(step, 'm');
                 }
                 table.empty().append(html);
@@ -888,7 +888,7 @@
                         row = $('<tr>');
                         html.push(row);
                     }
-                    row.append('<td data-action="selectSecond" class="second' + (!isValid(currentSecond, 's') ? ' disabled' : '') + '">' + currentSecond.format('ss') + '</td>');
+                    row.append('<td data-action="selectSecond" class="second' + (!isValid(currentSecond, 's') ? ' disabled' : '') + '">' + currentSecond.format('ss', { hideUserTimeFormat: true }) + '</td>');
                     currentSecond.add(5, 's');
                 }
 
@@ -902,7 +902,7 @@
                     toggle = widget.__find('.timepicker [data-action=togglePeriod]');
                     newDate = date.clone().add((date.hours() >= 12) ? -12 : 12, 'h');
 
-                    toggle.text(date.format('A'));
+                    toggle.text(date.format('A', { hideUserTimeFormat: true }));
 
                     if (isValid(newDate, 'h')) {
                         toggle.__removeClass('disabled');
@@ -910,9 +910,9 @@
                         toggle.__addClass('disabled');
                     }
                 }
-                timeComponents.filter('[data-time-component=hours]').text(date.format(use24Hours ? 'HH' : 'hh'));
-                timeComponents.filter('[data-time-component=minutes]').text(date.format('mm'));
-                timeComponents.filter('[data-time-component=seconds]').text(date.format('ss'));
+                timeComponents.filter('[data-time-component=hours]').text(date.format(use24Hours ? 'HH' : 'hh', { hideUserTimeFormat: true }));
+                timeComponents.filter('[data-time-component=minutes]').text(date.format('mm', { hideUserTimeFormat: true }));
+                timeComponents.filter('[data-time-component=seconds]').text(date.format('ss'), { hideUserTimeFormat: true });
 
                 fillHours();
                 fillMinutes();
@@ -2495,9 +2495,10 @@
                 throw new TypeError('keepInvalid() expects a boolean parameter');
             }
 
+			const oldValue = options.showTimePicker;
             options.showTimePicker = showTimePicker;
 
-			if (widget) {
+			if (widget && oldValue !== showTimePicker) {
 				hide();
 				show();
 			}
