@@ -2497,6 +2497,11 @@
 
             options.showTimePicker = showTimePicker;
 
+			if (widget) {
+				hide();
+				show();
+			}
+
             return picker;
         };
 
