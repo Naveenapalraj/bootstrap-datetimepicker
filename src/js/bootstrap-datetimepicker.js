@@ -965,8 +965,8 @@
                 if (isValid(targetMoment)) {
                     date = targetMoment;
                     viewDate = date.clone();
-                    input.val(date.format(actualFormat));
-                    element.data('date', date.format(actualFormat));
+                    input.val(date.format(actualFormat, { hideUserTimeFormat: true }));
+                    element.data('date', date.format(actualFormat, { hideUserTimeFormat: true }));
                     unset = false;
                     update();
                     notifyEvent({
