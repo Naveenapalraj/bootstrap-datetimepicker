@@ -1349,7 +1349,10 @@
                 if (input.prop('disabled') || (!options.ignoreReadonly && input.prop('readonly')) || widget) {
                     return picker;
                 }
-                if (input.val() !== undefined && input.val().trim().length !== 0) {
+
+                if (date) {
+					setValue(date);
+				} else if (input.val() !== undefined && input.val().trim().length !== 0) {
                     setValue(parseInputDate(input.val().trim()));
                 } else if (unset && options.useCurrent && (options.inline || (input.is('input') && input.val().trim().length === 0))) {
                     currentMoment = getMoment();
