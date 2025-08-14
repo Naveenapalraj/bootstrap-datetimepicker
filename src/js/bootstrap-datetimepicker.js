@@ -395,7 +395,18 @@
                     row.push($('<td>').append($('<a>').attr({ 'data-action': 'today', 'title': options.tooltips.today }).append($('<span>').__addClass(options.icons.today))));
                 }
                 if (!options.sideBySide && hasDate() && hasTime()) {
-                    row.push($('<td>').append($('<a>').attr({ 'data-action': 'togglePicker', 'title': options.tooltips.selectTime }).append($('<span>').__addClass(options.icons.time))));
+					row.push(
+						$('<td>').append(
+							$('<a>')
+								.attr({ 'data-action': 'togglePicker'})
+								.css('cssText', 'color: black !important; cursor: pointer;')
+								.append(
+									$('<span>')
+										.__addClass(options.icons.time)
+										.append(` ${options.tooltips.selectTime}`)
+								)
+						)
+					);
                 }
                 if (options.showClear) {
                     row.push($('<td>').append($('<a>').attr({ 'data-action': 'clear', 'title': options.tooltips.clear }).append($('<span>').__addClass(options.icons.clear))));
@@ -961,12 +972,13 @@
 						targetMoment = options.maxDate.clone().seconds(0).milliseconds(0);
 					}
 				}
-                
+
                 if (isValid(targetMoment)) {
                     date = targetMoment;
                     viewDate = date.clone();
-                    input.val(date.format(actualFormat));
-                    element.data('date', date.format(actualFormat));
+					const formattedValue = actualFormat?.replace(/\s*([hH]{1,2}:mm(?:\s+A)?)/, '   $1')
+                    input.val(date.format(formattedValue));
+                    element.data('date', date.format(formattedValue));
                     unset = false;
                     update();
                     notifyEvent({
@@ -1212,8 +1224,10 @@
                         }
                         if ($this.is('span')) {
                             $this.__toggleClass(options.icons.time + ' ' + options.icons.date);
+							$this.text($this.__hasClass('glyphicon-time') ? ` ${options.tooltips.selectTime}` : ` ${options.tooltips.selectDate}`);
                         } else {
                             $this.__find('span').__toggleClass(options.icons.time + ' ' + options.icons.date);
+							span.text(span.__hasClass('glyphicon-time') ? ` ${options.tooltips.selectTime}` : ` ${options.tooltips.selectDate}`);
                         }
 
                         if (widget && widget.find('.timepicker').is(':visible')) {
@@ -1229,7 +1243,7 @@
 
                 validateTimePickerArrows: function () {
                     if (!widget || !widget.find('.timepicker').is(':visible')) return;
-                
+
                     const hourUp = widget.find('[data-action="incrementHours"]'),
                         hourDown = widget.find('[data-action="decrementHours"]'),
                         minuteUp = widget.find('[data-action="incrementMinutes"]'),
@@ -1238,17 +1252,17 @@
                         selectedMoment = inputVal.length !== 0 ? parseInputDate(inputVal) : null;
 
                     if (!selectedMoment) return;
-                
+
                     const plusHour = selectedMoment.clone().add(1, 'hour'),
                         minusHour = selectedMoment.clone().subtract(1, 'hour'),
                         plusMinute = selectedMoment.clone().add(5, 'minute'),
                         minusMinute = selectedMoment.clone().subtract(5, 'minute');
-                
+
                     hourUp.removeClass('inactive-css');
                     hourDown.removeClass('inactive-css');
                     minuteUp.removeClass('inactive-css');
                     minuteDown.removeClass('inactive-css');
-                
+
                     if (!isValid(minusHour, 'h')) hourDown.addClass('inactive-css');
                     if (!isValid(plusHour, 'h')) hourUp.addClass('inactive-css');
                     if (!isValid(minusMinute, 'm')) minuteDown.addClass('inactive-css');
@@ -2682,7 +2696,8 @@
             incrementSecond: 'Increment Second',
             decrementSecond: 'Decrement Second',
             togglePeriod: 'Toggle Period',
-            selectTime: 'Select Time'
+            selectTime: 'Select Time',
+			selectDate: 'Select Date'
         },
         useStrict: false,
         sideBySide: false,
