@@ -206,6 +206,7 @@
                 46: 'delete'
             },
             keyState = {},
+            pendingTimeValue = null,
 
             /********************************************************************************
              *
@@ -399,7 +400,7 @@
 						$('<td>').append(
 							$('<a>')
 								.attr({ 'data-action': 'togglePicker'})
-								.css('cssText', 'color: black !important; cursor: pointer;')
+								.css('cursor', 'pointer')
 								.append(
 									$('<span>')
 										.__addClass(options.icons.time)
@@ -659,6 +660,12 @@
                         return false;
                     }
                 }
+                if (options.allowedTimeIntervals && (granularity === 'h' || granularity === 'm' || granularity === 's')) {
+                    const [start, end] = options.allowedTimeIntervals;
+                    if (!targetMoment.isBetween(start, end, null, '[]')) {
+                        return false;
+                    }
+                }
                 return true;
             },
 
@@ -794,7 +801,7 @@
                 daysViewHeader.eq(2).__find('span').attr('title', options.tooltips.nextMonth);
 
                 daysView.__find('.disabled').__removeClass('disabled');
-                daysViewHeader.eq(1).text(viewDate.format(options.dayViewHeaderFormat));
+                daysViewHeader.eq(1).text(viewDate.format(options.dayViewHeaderFormat, { hideUserTimeFormat: true }));
 
                 if (!isValid(viewDate.clone().subtract(1, 'M'), 'M')) {
                     daysViewHeader.eq(0).__addClass('disabled');
@@ -850,70 +857,70 @@
                 updateDecades();
             },
 
-            fillHours = function () {
+            fillHours = function (displayMoment) {
                 var table = widget.__find('.timepicker-hours table'),
-                    currentHour = viewDate.clone().startOf('d'),
+                    currentHour = displayMoment.clone().startOf('d'),
                     html = [],
                     row = $('<tr>');
 
-                if (viewDate.hour() > 11 && !use24Hours) {
+                if (displayMoment.hour() > 11 && !use24Hours) {
                     currentHour.hour(12);
                 }
-                while (currentHour.isSame(viewDate, 'd') && (use24Hours || (viewDate.hour() < 12 && currentHour.hour() < 12) || viewDate.hour() > 11)) {
+                while (currentHour.isSame(displayMoment, 'd') && (use24Hours || (displayMoment.hour() < 12 && currentHour.hour() < 12) || displayMoment.hour() > 11)) {
                     if (currentHour.hour() % 4 === 0) {
                         row = $('<tr>');
                         html.push(row);
                     }
-                    row.append('<td data-action="selectHour" class="hour' + (!isValid(currentHour, 'h') ? ' disabled' : '') + '">' + currentHour.format(use24Hours ? 'HH' : 'hh') + '</td>');
+                    row.append('<td data-action="selectHour" class="hour' + (!isValid(currentHour, 'h') ? ' disabled' : '') + '">' + currentHour.format(use24Hours ? 'HH' : 'hh', { hideUserTimeFormat: true }) + '</td>');
                     currentHour.add(1, 'h');
                 }
                 table.empty().append(html);
             },
 
-            fillMinutes = function () {
+            fillMinutes = function (displayMoment) {
                 var table = widget.__find('.timepicker-minutes table'),
-                    currentMinute = viewDate.clone().startOf('h'),
+                    currentMinute = displayMoment.clone().startOf('h'),
                     html = [],
                     row = $('<tr>'),
                     step = options.stepping === 1 ? 5 : options.stepping;
 
-                while (viewDate.isSame(currentMinute, 'h')) {
+                while (displayMoment.isSame(currentMinute, 'h')) {
                     if (currentMinute.minute() % (step * 4) === 0) {
                         row = $('<tr>');
                         html.push(row);
                     }
-                    row.append('<td data-action="selectMinute" class="minute' + (!isValid(currentMinute, 'm') ? ' disabled' : '') + '">' + currentMinute.format('mm') + '</td>');
+                    row.append('<td data-action="selectMinute" class="minute' + (!isValid(currentMinute, 'm') ? ' disabled' : '') + '">' + currentMinute.format('mm', { hideUserTimeFormat: true }) + '</td>');
                     currentMinute.add(step, 'm');
                 }
                 table.empty().append(html);
             },
 
-            fillSeconds = function () {
+            fillSeconds = function (displayMoment) {
                 var table = widget.__find('.timepicker-seconds table'),
-                    currentSecond = viewDate.clone().startOf('m'),
+                    currentSecond = displayMoment.clone().startOf('m'),
                     html = [],
                     row = $('<tr>');
 
-                while (viewDate.isSame(currentSecond, 'm')) {
+                while (displayMoment.isSame(currentSecond, 'm')) {
                     if (currentSecond.second() % 20 === 0) {
                         row = $('<tr>');
                         html.push(row);
                     }
-                    row.append('<td data-action="selectSecond" class="second' + (!isValid(currentSecond, 's') ? ' disabled' : '') + '">' + currentSecond.format('ss') + '</td>');
+                    row.append('<td data-action="selectSecond" class="second' + (!isValid(currentSecond, 's') ? ' disabled' : '') + '">' + currentSecond.format('ss', { hideUserTimeFormat: true }) + '</td>');
                     currentSecond.add(5, 's');
                 }
 
                 table.empty().append(html);
             },
 
-            fillTime = function () {
+            fillTime = function (displayMoment) {
                 var toggle, newDate, timeComponents = widget.__find('.timepicker span[data-time-component]');
 
                 if (!use24Hours) {
                     toggle = widget.__find('.timepicker [data-action=togglePeriod]');
-                    newDate = date.clone().add((date.hours() >= 12) ? -12 : 12, 'h');
+                    newDate = displayMoment.clone().add((displayMoment.hours() >= 12) ? -12 : 12, 'h');
 
-                    toggle.text(date.format('A'));
+                    toggle.text(displayMoment.format('A', { hideUserTimeFormat: true }));
 
                     if (isValid(newDate, 'h')) {
                         toggle.__removeClass('disabled');
@@ -921,21 +928,30 @@
                         toggle.__addClass('disabled');
                     }
                 }
-                timeComponents.filter('[data-time-component=hours]').text(date.format(use24Hours ? 'HH' : 'hh'));
-                timeComponents.filter('[data-time-component=minutes]').text(date.format('mm'));
-                timeComponents.filter('[data-time-component=seconds]').text(date.format('ss'));
+                timeComponents.filter('[data-time-component=hours]').text(displayMoment.format(use24Hours ? 'HH' : 'hh', { hideUserTimeFormat: true }));
+                timeComponents.filter('[data-time-component=minutes]').text(displayMoment.format('mm', { hideUserTimeFormat: true }));
+                timeComponents.filter('[data-time-component=seconds]').text(displayMoment.format('ss', { hideUserTimeFormat: true }));
 
-                fillHours();
-                fillMinutes();
-                fillSeconds();
+                fillHours(displayMoment);
+                fillMinutes(displayMoment);
+                fillSeconds(displayMoment);
             },
 
-            update = function () {
+            update = function (canUpdateInput) {
                 if (!widget) {
                     return;
                 }
                 fillDate();
-                fillTime();
+                var displayMoment = pendingTimeValue || date;
+                if (canUpdateInput && isValid(displayMoment)) {
+                    const formattedValue = actualFormat?.replace(/\s*([hH]{1,2}:mm(?:\s+A)?)/, '   $1')
+                    input.val(displayMoment.format(formattedValue, { hideUserTimeFormat: true }));
+                    element.data('date', displayMoment.format(formattedValue, { hideUserTimeFormat: true }));
+                    if (widget && widget.find('.timepicker').is(':visible')) {
+                        actions.validateTimePickerArrows();
+                    }
+                }
+                fillTime(displayMoment);
             },
 
             setValue = function (targetMoment) {
@@ -977,8 +993,8 @@
                     date = targetMoment;
                     viewDate = date.clone();
 					const formattedValue = actualFormat?.replace(/\s*([hH]{1,2}:mm(?:\s+A)?)/, '   $1')
-                    input.val(date.format(formattedValue));
-                    element.data('date', date.format(formattedValue));
+                    input.val(date.format(formattedValue, { hideUserTimeFormat: true }));
+                    element.data('date', date.format(formattedValue, { hideUserTimeFormat: true }));
                     unset = false;
                     update();
                     notifyEvent({
@@ -1024,6 +1040,10 @@
                     }
                     return true;
                 });
+                if (pendingTimeValue) {
+                    setValue(pendingTimeValue);
+                    pendingTimeValue = null;
+                }
                 if (transitioning) {
                     return picker;
                 }
@@ -1151,44 +1171,56 @@
                 },
 
                 incrementHours: function () {
-                    var newDate = date.clone().add(1, 'h');
+                    var baseDate = pendingTimeValue || date;
+                    var newDate = baseDate.clone().add(1, 'h');
                     if (isValid(newDate, 'h')) {
-                        setValue(newDate);
+                        pendingTimeValue = newDate;
+                        update(true);
                     }
                 },
 
                 incrementMinutes: function () {
-                    var newDate = date.clone().add(options.stepping, 'm');
+                    var baseDate = pendingTimeValue || date;
+                    var newDate = baseDate.clone().add(options.stepping, 'm');
                     if (isValid(newDate, 'm')) {
-                        setValue(newDate);
+                        pendingTimeValue = newDate;
+                        update(true);
                     }
                 },
 
                 incrementSeconds: function () {
-                    var newDate = date.clone().add(1, 's');
+                    var baseDate = pendingTimeValue || date;
+                    var newDate = baseDate.clone().add(1, 's');
                     if (isValid(newDate, 's')) {
-                        setValue(newDate);
+                        pendingTimeValue = newDate;
+                        update(true);
                     }
                 },
 
                 decrementHours: function () {
-                    var newDate = date.clone().subtract(1, 'h');
+                    var baseDate = pendingTimeValue || date;
+                    var newDate = baseDate.clone().subtract(1, 'h');
                     if (isValid(newDate, 'h')) {
-                        setValue(newDate);
+                        pendingTimeValue = newDate;
+                        update(true);
                     }
                 },
 
                 decrementMinutes: function () {
-                    var newDate = date.clone().subtract(options.stepping, 'm');
+                    var baseDate = pendingTimeValue || date;
+                    var newDate = baseDate.clone().subtract(options.stepping, 'm');
                     if (isValid(newDate, 'm')) {
-                        setValue(newDate);
+                        pendingTimeValue = newDate;
+                        update(true);
                     }
                 },
 
                 decrementSeconds: function () {
-                    var newDate = date.clone().subtract(1, 's');
+                    var baseDate = pendingTimeValue || date;
+                    var newDate = baseDate.clone().subtract(1, 's');
                     if (isValid(newDate, 's')) {
-                        setValue(newDate);
+                        pendingTimeValue = newDate;
+                        update(true);
                     }
                 },
 
@@ -1202,6 +1234,11 @@
                         expanded = $parent.__find('.in'),
                         closed = $parent.__find('.collapse:not(.in)'),
                         collapseData;
+
+                    if (pendingTimeValue) {
+                        setValue(pendingTimeValue);
+                        pendingTimeValue = null;
+                    }
 
                     if (options.timeFormat && !options.format.includes(options.timeFormat)) {
                         const updatedFormat = `${options.format} ${options.timeFormat}`;
@@ -1303,17 +1340,17 @@
                             }
                         }
                     }
-                    setValue(date.clone().hours(hour));
+                    pendingTimeValue = date.clone().hours(hour);
                     actions.showPicker.call(picker);
                 },
 
                 selectMinute: function (e) {
-                    setValue(date.clone().minutes(parseInt($(e.target).text(), 10)));
+                    pendingTimeValue = date.clone().minutes(parseInt($(e.target).text(), 10));
                     actions.showPicker.call(picker);
                 },
 
                 selectSecond: function (e) {
-                    setValue(date.clone().seconds(parseInt($(e.target).text(), 10)));
+                    pendingTimeValue = date.clone().seconds(parseInt($(e.target).text(), 10));
                     actions.showPicker.call(picker);
                 },
 
@@ -1359,7 +1396,7 @@
                             return m.seconds(0);
                         }
                     };
-
+                    pendingTimeValue = null
                 if (input.prop('disabled') || (!options.ignoreReadonly && input.prop('readonly')) || widget) {
                     return picker;
                 }
@@ -1370,6 +1407,10 @@
                     if (typeof options.useCurrent === 'string') {
                         currentMoment = useCurrentGranularity[options.useCurrent](currentMoment);
                     }
+                    setValue(currentMoment);
+                } else if (options.allowedTimeIntervals && options.allowedTimeIntervals.length === 2) {
+                    const [startTime] = options.allowedTimeIntervals;
+                    currentMoment = getMoment().startOf('day').hour(startTime.hour()).minute(startTime.minute()).second(0).millisecond(0);
                     setValue(currentMoment);
                 }
                 widget = getTemplate();
@@ -2368,6 +2409,23 @@
             return picker;
         };
 
+        picker.allowedTimeIntervals = function (intervals) {
+            if (arguments.length === 0) {
+                return options.allowedTimeIntervals ? $.extend({}, options.allowedTimeIntervals) : options.allowedTimeIntervals;
+            }
+            if (!intervals) {
+                options.allowedTimeIntervals = false;
+                update();
+                return picker;
+            }
+            if (!(intervals instanceof Array) || intervals.length !== 2) {
+                throw new TypeError('allowedTimeIntervals expects an array of start and end moment objects');
+            }
+            options.allowedTimeIntervals = intervals;
+            update();
+            return picker;
+        };
+
         picker.disabledHours = function (hours) {
             ///<signature helpKeyword="$.fn.datetimepicker.disabledHours">
             ///<summary>Returns an array with the currently set disabled hours on the component.</summary>
@@ -2831,6 +2889,7 @@
         debug: false,
         allowInputToggle: false,
         disabledTimeIntervals: false,
+        allowedTimeIntervals: false,
         disabledHours: false,
         enabledHours: false,
         viewDate: false,
