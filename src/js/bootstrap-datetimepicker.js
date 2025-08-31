@@ -1225,7 +1225,10 @@
                 },
 
                 togglePeriod: function () {
-                    setValue(date.clone().add((date.hours() >= 12) ? -12 : 12, 'h'));
+                    var baseDate = pendingTimeValue || date;
+                    var newDate = baseDate.clone().add((baseDate.hours() >= 12) ? -12 : 12, 'h');
+                    pendingTimeValue = newDate;
+                    update(true);
                 },
 
                 togglePicker: function (e) {
@@ -1408,9 +1411,12 @@
                         currentMoment = useCurrentGranularity[options.useCurrent](currentMoment);
                     }
                     setValue(currentMoment);
-                } else if (options.allowedTimeIntervals && options.allowedTimeIntervals.length === 2) {
+                } else if (unset && options.allowedTimeIntervals && options.allowedTimeIntervals.length === 2) {
                     const [startTime] = options.allowedTimeIntervals;
                     currentMoment = getMoment().startOf('day').hour(startTime.hour()).minute(startTime.minute()).second(0).millisecond(0);
+                    setValue(currentMoment);
+                } else if (unset) {
+                    currentMoment = getMoment().startOf('day');
                     setValue(currentMoment);
                 }
                 widget = getTemplate();
@@ -1722,9 +1728,18 @@
                 throw new TypeError('format() expects a string or boolean:false parameter ' + newFormat);
             }
 
+            var oldFormat = options.format || '';
+            var timeFormatRegex = /(HH:mm|hh:mm\s*A)/;
+            var hadTime = timeFormatRegex.test(oldFormat);
+            var hasTime = timeFormatRegex.test(newFormat);
+
             options.format = newFormat;
             if (actualFormat) {
-                initFormatting(); // reinit formatting
+                initFormatting();
+                if (widget && (hadTime !== hasTime)) {
+                    picker.hide();
+                    picker.show();
+                }
             }
             return picker;
         };
