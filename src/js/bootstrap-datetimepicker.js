@@ -1343,12 +1343,16 @@
                             }
                         }
                     }
-                    pendingTimeValue = date.clone().hours(hour);
-                    actions.showPicker.call(picker);
+                        pendingTimeValue = date.clone().hours(hour);
+                        setValue(pendingTimeValue);
+                        pendingTimeValue = null;
+                        actions.showPicker.call(picker);
                 },
 
                 selectMinute: function (e) {
                     pendingTimeValue = date.clone().minutes(parseInt($(e.target).text(), 10));
+                    setValue(pendingTimeValue);
+                    pendingTimeValue = null;
                     actions.showPicker.call(picker);
                 },
 
