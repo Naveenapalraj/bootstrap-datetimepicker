@@ -633,11 +633,19 @@
                 if (options.enabledDates && granularity === 'd' && !isInEnabledDates(targetMoment)) {
                     return false;
                 }
-                if (options.minDate && targetMoment.isBefore(options.minDate, granularity)) {
-                    return false;
+                if (options.minDate) {
+                    var minDateNoMs = options.minDate.clone().milliseconds(0);
+                    var targetNoMs = targetMoment.clone().milliseconds(0);
+                    if (targetNoMs.isBefore(minDateNoMs, granularity)) {
+                        return false;
+                    }
                 }
-                if (options.maxDate && targetMoment.isAfter(options.maxDate, granularity)) {
-                    return false;
+                if (options.maxDate) {
+                    var maxDateNoMs = options.maxDate.clone().milliseconds(0);
+                    var targetNoMs = targetMoment.clone().milliseconds(0);
+                    if (targetNoMs.isAfter(maxDateNoMs, granularity)) {
+                        return false;
+                    }
                 }
                 if (options.daysOfWeekDisabled && granularity === 'd' && options.daysOfWeekDisabled.indexOf(targetMoment.day()) !== -1) {
                     return false;
